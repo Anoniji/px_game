@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PX_Game</title>
+    <script src="./jquery-3.6.0.min.js"></script>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <style type="text/css">
+        body {
+            overflow: hidden;
+            background-color: black;
+            transition: all .3s linear;
+            font-family: arial;
+        }
+
+        small {
+            font-size: 14px;
+            margin-top: -16px;
+        }
+
+        #menu {
+            position: fixed;
+            clear: both;
+            z-index: 100;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-color: black;
+            color: white;
+            height: 32px;
+            user-select: none;
+        }
+
+        #result {
+            position: absolute;
+            z-index: 10;
+            left: 8px;
+            top: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        #count {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        #msg {
+            position: fixed;
+            left: 100px;
+            right: 99px;
+            bottom: 50%;
+            text-align: center;
+            font-size: 50px;
+        }
+
+        #grid {
+            position: fixed;
+            display: table;
+            z-index: 10;
+            width: 320px;
+            height: 320px;
+            left: -320px;
+            top: -320px;
+        }
+
+        .lien {
+            display: table-row;
+        }
+
+        .bloc {
+            width: 32px;
+            height: 32px;
+            left: -32px;
+            height: -32px;
+            background-color: black;
+            display: table-cell;
+            transition: all .3s linear;
+        }
+
+        @keyframes move {
+
+            0%,
+            100% {
+                left: 0;
+            }
+
+            50% {
+                margin-left: 128px;
+            }
+        }
+
+        #welcome {
+            height: 64px;
+        }
+
+        #welcome img {
+            float: left;
+        }
+
+        #welcome div {
+            position: relative;
+            top: 46px;
+            left: 12px;
+            color: white;
+        }
+
+        #end_count {
+            margin-top: 24px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id='welcome'>
+        <img src="./favicon.png" />
+        <div>PX_game</div>
+    </div>
+    <div id='menu'>
+        <div id='result'>
+            <div id='max'>
+                Best score: 
+                <span>0</span>
+            </div>
+            <div id='msg'></div>
+        </div>
+        <div id='count'>Count: <span>0</span></div>
+    </div>
+    <div id='grid'></div>
+</body>
+
+<script type="text/javascript">
+    fixed = false;
+    cnt = 0;
+    cnt_stk = 0;
+    play_cnt = 0;
+    fail_cnt = 0;
+    speed_rot = 10000;
+    stk = false;
+    stop_rotate = false
+
+    function rotateForEver($elem, rotator) {
+        if (rotator === void(0)) {
+            rotator = $({deg: 0});
+        } else {
+            rotator.get(0).deg = 0;
+        }
+
+        return rotator.animate(
+            {deg: 360},
+            {
+                duration: speed_rot,
+                easing: 'linear',
+                step: function(now){
+                    $elem.css({transform: 'rotate(' + now + 'deg)'});
+                },
+                complete: function(){
+                    if(!stop_rotate) {
+                        rotateForEver($elem, rotator);
+                    } else {
+                        stop_rotate = false;
+                    }
+                },
+            }
+        );
+    }
+
+    function getRandomArbitrary(min, max) {
+        return parseInt(Math.random() * (max - min) + min);
+    }
+
+    function check_level(cnt) {
+        if (cnt > 10 && cnt <= 20) {
+            $('body').css({'background-color': 'white'})
+        }
+        if (cnt > 20 && cnt % 2 == 0) {
+            $('body').css({'background-color': 'red'})
+        }
+        if (cnt > 20 && cnt % 2 == 1) {
+            $('body').css({'background-color': 'white'})
+        }
+        if (cnt == 30) {
+            rotateForEver($('#grid'))
+        }
+        if (cnt == 40) {
+            speed_rot = 5000;
+        }
+        if (cnt == 50) {
+            $('.bloc').css('border-radius', '50%');
+        }
+        if (cnt == 60) {
+            $('.line').css('animation', 'move 2s infinite');
+        }
+    }
+
+    // Generate grid
+    size = [10, 10]
+    for (let i=0; i<size[0]; i++) {
+        $('#grid').append('<div id="line_' + i + '" class="line">')
+        for (let j=0; j<size[1]; j++) {
+            $('#line_' + i + '').append('<div id="bloc_' + i + '_' + j + '" class="bloc"></div>')
+        }
+        $('#grid').append('</div>')
+    }
+
+    // Watcher
+    jQuery(function($) {
+
+        var max = localStorage.getItem('max');
+        if(max) {
+            $('#max span').html(max);
+        }
+
+        $('#welcome').delay(1500).hide(1000);
+        $(document).mousemove(function(event) {
+            if (!fixed) {
+                $('#grid').css({top: event.pageY - 160, left: event.pageX - 160})
+            }
+        });
+
+        $(document).on('click', function(evt) {
+            get_id = evt.target.id
+            get_x_y = get_id.split('_')
+            get_x_y = [parseInt(get_x_y[1]), parseInt(get_x_y[2])]
+            cnt = cnt + 1;
+
+            // Game count
+            if (get_id) {
+                var color = $('#' + get_id).css( "background-color" );
+                if(color != 'rgb(0, 0, 0)') {
+                    $('#' + get_id).css({'background-color': 'black'})
+                    play_cnt = play_cnt + 1;
+                    if (fail_cnt <= 0) {
+                        fail_cnt = 0;
+                    } else {
+                        fail_cnt = fail_cnt - 1;
+                    }
+                    check_level(play_cnt);
+                    $('#count span').html(play_cnt);
+                } else {
+                    fail_cnt = fail_cnt + 1;
+                }
+                if (fail_cnt > 10) {
+                    last = parseInt($('#max span').text());
+                    if (play_cnt > last) {
+                        $('#max span').html(play_cnt);
+                        localStorage.setItem('max', play_cnt);
+                    }
+                    $('#grid').hide();
+                    $('#welcome').show(1000);
+                    $('body').css({'background-color': 'black'})
+
+                    if(play_cnt < 10) {
+                        txt = 'Seriously ? Do better of this please...';
+                    } else if(play_cnt > 100) {
+                        txt = 'I don\'t believe you, you cheat, you dirty cheater :(';
+                    } else {
+                        txt = 'Game over, you\'re not very good :(';
+                    }
+
+                    html = '<div>' + txt + '</div>';
+                    html += '<div><small>The game will restart...';
+                    html += '</small>';
+                    html += '<div id=\'end_count\'>Your score: ' + play_cnt.toString() + '</div>';
+                    html += '</div>'
+
+                    $('#msg').html(html).delay(3000).queue(function () {
+                        location.reload();
+                    });
+                }
+            }
+
+            // Game move
+            fixed = true;
+            $('#bloc_' + getRandomArbitrary(0, size[0] - 1) + '_' + getRandomArbitrary(0, size[1] - 1)).css(
+                {'background-color': 'red'}).delay(800).queue(function (next) {
+                    $(this).css({'background-color': 'black'}).delay(300).queue(function (act) {
+                        cnt = cnt - 1;
+                        console.log(cnt)
+                        if (cnt <= 0) {
+                            fixed = false;
+                            cnt = 0;
+                        }
+                        if (cnt_stk != cnt || cnt < (size[0] * size[1] - 10)) {
+                            cnt_stk = cnt;
+                        } else {
+                            // Reset bloc
+                            $('.bloc').css({'background-color': 'black'});
+                        }
+                    });
+                    next();
+                });
+        });
+    });
+</script>
+
+</html>
