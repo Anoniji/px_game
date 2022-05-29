@@ -27,7 +27,7 @@
             margin-top: -16px;
         }
 
-        #level_up {
+        .level_up {
             position: fixed;
             display:  none;
             right: 0;
@@ -41,6 +41,15 @@
             text-orientation: upright;
             text-align: center;
         }
+
+        #level_up_l {
+            left: 0;
+        }
+
+        #level_up_r {
+            right: 0;
+        }
+
         #menu {
             position: fixed;
             clear: both;
@@ -138,7 +147,8 @@
     </style>
 </head>
 <body>
-    <div id='level_up'>↑ Level UP</div>
+    <div id='level_up_l' class='level_up'>↑ Level UP</div>
+    <div id='level_up_r' class='level_up'>↑ Level UP</div>
     <div id='welcome'>
         <img src="./favicon.png" />
         <div>PX_game</div>
@@ -198,7 +208,7 @@
 
     function check_level(cnt) {
         if (cnt % 10 == 0 && cnt < 70&& cnt > 0) {
-            $('#level_up').show('slide', {direction: 'down'}, 300).delay(3000).hide('slide', {direction: 'up'}, 300);
+            $('.level_up').show('slide', {direction: 'down'}, 300).delay(3000).hide('slide', {direction: 'up'}, 300);
         }
 
         if (cnt > 10 && cnt <= 20) {
