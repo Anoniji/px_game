@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PX_Game</title>
     <script src="./jquery-3.6.0.min.js"></script>
+    <script src="./jquery-ui.min.js"></script>
     <link rel="icon" type="image/png" href="favicon.png" />
     <style type="text/css">
         body {
@@ -19,6 +20,20 @@
             margin-top: -16px;
         }
 
+        #level_up {
+            position: fixed;
+            display:  none;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background-color: black;
+            color: white;
+            z-index: 100;
+            padding: 8px;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            text-align: center;
+        }
         #menu {
             position: fixed;
             clear: both;
@@ -116,6 +131,7 @@
     </style>
 </head>
 <body>
+    <div id='level_up'>↑ Level UP</div>
     <div id='welcome'>
         <img src="./favicon.png" />
         <div>PX_game</div>
@@ -174,6 +190,10 @@
     }
 
     function check_level(cnt) {
+        if (cnt % 10 == 0 && cnt < 70&& cnt > 0) {
+            $('#level_up').show('slide', {direction: 'down'}, 300).delay(3000).hide('slide', {direction: 'up'}, 300);
+        }
+
         if (cnt > 10 && cnt <= 20) {
             $('body').css({'background-color': 'white'})
         }
