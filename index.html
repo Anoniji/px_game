@@ -27,6 +27,16 @@
             margin-top: -16px;
         }
 
+        #ping {
+            position: fixed;
+            left: -10px;
+            top: -10px;
+            width: 1px;
+            height: 1px;
+            z-index: 10000;
+            background-color: white;
+        }
+
         #progress {
             position: fixed;
             left: 0;
@@ -186,6 +196,7 @@
     </style>
 </head>
 <body>
+    <div id='ping'></div>
     <div id='progress'>
         <div class='bar'></div>
         <div class='fail'></div>
@@ -299,6 +310,7 @@
 
     // Watcher
     jQuery(function($) {
+        skt_cur = [0, 0];
         var max = localStorage.getItem('max');
         if(max) {
             $('#max span').html(max);
@@ -306,6 +318,7 @@
 
         $('#welcome').delay(1500).fadeOut(500);
         $(document).mousemove(function(event) {
+            skt_cur = [event.pageY, event.pageX];
             $('#count').css({top: event.pageY + 20, left: event.pageX + 18})
             if (!fixed) {
                 $('#grid').css({top: event.pageY - 160, left: event.pageX - 160})
@@ -322,6 +335,7 @@
 
             // Game count
             if (get_id) {
+                $('#ping').css({top: skt_cur[0], left: skt_cur[1]})
                 var color = $('#' + get_id).css( "background-color" );
                 if(color != 'rgb(0, 0, 0)') {
                     $('#' + get_id).css({'background-color': 'black'})
