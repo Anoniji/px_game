@@ -27,6 +27,27 @@
             margin-top: -16px;
         }
 
+        #progress {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            height: 3px;
+            z-index: 1000;
+        }
+
+        #progress .bar {
+            background-color: red;
+            height: 2px;
+            width: 0%;
+        }
+
+        #progress .fail {
+            background-color: white;
+            height: 1px;
+            width: 0%;
+        }
+
         .level_up {
             position: fixed;
             display: none;
@@ -39,6 +60,8 @@
             writing-mode: vertical-rl;
             text-orientation: upright;
             text-align: center;
+            user-select: none;
+            margin-top: -45px;
         }
 
         #level_up_l {
@@ -54,7 +77,7 @@
             clear: both;
             z-index: 100;
             left: 0;
-            bottom: 0;
+            top: 0;
             right: 0;
             background-color: black;
             color: white;
@@ -73,10 +96,12 @@
 
         #count {
             position: absolute;
-            top: 8px;
-            right: 8px;
+            top: -10px;
+            left: -10px;
             color: white;
-            font-size: 14px;
+            font-size: 12px;
+            width: 34px;
+            text-shadow: black 0px 0px 3px;
         }
 
         #msg {
@@ -112,20 +137,35 @@
             transition: all .3s linear;
         }
 
-        @keyframes move {
-
+        @keyframes padd {
             0%,
             100% {
-                left: 0;
+                padding: 0;
             }
 
             50% {
-                margin-left: 128px;
+                padding: 3px;
+            }
+        }
+
+        @keyframes marg {
+            0%,
+            100% {
+                margin: 0;
+            }
+
+            50% {
+                margin: 30px;
             }
         }
 
         #welcome {
+            position: fixed;
+            top: 46px;
+            left: 12px;
             height: 64px;
+            z-index: 1000;
+            width: 150px;
         }
 
         #welcome img {
@@ -146,6 +186,10 @@
     </style>
 </head>
 <body>
+    <div id='progress'>
+        <div class='bar'></div>
+        <div class='fail'></div>
+    </div>
     <div id='level_up_l' class='level_up'>↑ Level UP</div>
     <div id='level_up_r' class='level_up'>↑ Level UP</div>
     <div id='welcome'>
@@ -160,7 +204,7 @@
             </div>
             <div id='msg'></div>
         </div>
-        <div id='count'>Count: <span>0</span></div>
+        <div id='count'>0</div>
     </div>
     <div id='grid'></div>
 </body>
@@ -206,17 +250,21 @@
     }
 
     function check_level(cnt) {
-        if (cnt % 10 == 0 && cnt < 70&& cnt > 0) {
+        $('.bar').animate({
+            width: (cnt % 10 * 10).toString() + '%'
+        }, 300);
+
+        if (cnt % 10 == 0 && cnt < 90 && cnt > 0) {
             $('.level_up').show('slide', {direction: 'down'}, 300).delay(3000).hide('slide', {direction: 'up'}, 300);
         }
 
-        if (cnt > 10 && cnt <= 20) {
+        if (cnt >= 10 && cnt <= 20) {
             $('body').css({'background-color': 'white'})
         }
-        if (cnt > 20 && cnt % 2 == 0) {
+        if (cnt >= 20 && cnt % 2 == 0) {
             $('body').css({'background-color': 'red'})
         }
-        if (cnt > 20 && cnt % 2 == 1) {
+        if (cnt >= 20 && cnt % 2 == 1) {
             $('body').css({'background-color': 'white'})
         }
         if (cnt == 30) {
@@ -229,7 +277,13 @@
             $('.bloc').css('border-radius', '50%');
         }
         if (cnt == 60) {
-            $('.line').css('animation', 'move 2s infinite');
+            $('#grid').css('animation', 'marg 2s infinite');
+        }
+        if (cnt == 70) {
+            $('.line').css('animation', 'padd 2s infinite');
+        }
+        if (cnt == 80) {
+            $('.bloc').css('animation', 'padd 2s infinite');
         }
     }
 
@@ -245,17 +299,19 @@
 
     // Watcher
     jQuery(function($) {
-
         var max = localStorage.getItem('max');
         if(max) {
             $('#max span').html(max);
         }
 
-        $('#welcome').delay(1500).hide(1000);
+        $('#welcome').delay(1500).fadeOut(500);
         $(document).mousemove(function(event) {
+            $('#count').css({top: event.pageY + 20, left: event.pageX + 18})
             if (!fixed) {
                 $('#grid').css({top: event.pageY - 160, left: event.pageX - 160})
             }
+        }).mouseleave(function() {
+            $('#count').css({top: '-10px', left: '-10px'})
         });
 
         $(document).on('click', function(evt) {
@@ -276,19 +332,27 @@
                         fail_cnt = fail_cnt - 1;
                     }
                     check_level(play_cnt);
-                    $('#count span').html(play_cnt);
+                    $('#count').html(play_cnt);
                 } else {
                     fail_cnt = fail_cnt + 1;
                 }
-                if (fail_cnt > 10) {
+
+                $('.fail').animate({
+                    width: (fail_cnt * 10).toString() + '%'
+                }, 300)
+
+                if (fail_cnt >= 10) {
                     last = parseInt($('#max span').text());
                     if (play_cnt > last) {
                         $('#max span').html(play_cnt);
                         localStorage.setItem('max', play_cnt);
                     }
-                    $('#grid').hide();
-                    $('#welcome').show(1000);
+                    $('#grid, #count, .level_up').hide();
+                    $('#welcome').fadeIn(500);
                     $('body').css({'background-color': 'black'})
+                    $('.bar').animate({
+                        width: '0%'
+                    }, 300);
 
                     if(play_cnt < 10) {
                         txt = 'Seriously ? Do better of this please...';
@@ -316,7 +380,6 @@
                 {'background-color': 'red'}).delay(800).queue(function (next) {
                     $(this).css({'background-color': 'black'}).delay(300).queue(function (act) {
                         cnt = cnt - 1;
-                        console.log(cnt)
                         if (cnt <= 0) {
                             fixed = false;
                             cnt = 0;
@@ -324,7 +387,6 @@
                         if (cnt_stk != cnt || cnt < (size[0] * size[1] - 10)) {
                             cnt_stk = cnt;
                         } else {
-                            // Reset bloc
                             $('.bloc').css({'background-color': 'black'});
                         }
                     });
