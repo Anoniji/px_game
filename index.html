@@ -71,7 +71,6 @@
             text-orientation: upright;
             text-align: center;
             user-select: none;
-            margin-top: -45px;
         }
 
         #level_up_l {
@@ -234,6 +233,10 @@
             cursor: pointer;
         }
 
+        #display_menu {
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
@@ -266,6 +269,7 @@
     <div id='menu'>
         <div id='result'>
             <div id='max'>
+                <span id='display_menu'>▼</span>
                 <span id='max_txt'></span>
                 <span id='max_val'>0</span>
             </div>
@@ -277,7 +281,7 @@
 </body>
 
 <script type="text/javascript">
-    fixed=!1,cnt=0,cnt_stk=0,play_cnt=0,fail_cnt=0,speed_rot=1e4,stk=!1,stop_rotate=!1;
+    fixed=!1,cnt=0,cnt_stk=0,play_cnt=0,fail_cnt=0,speed_rot=1e4,stk=!1,stop_rotate=false;
     "fr"!=(language=navigator.language.split("-")[0])&&(language="en")
 
     var hash = $(location).prop('hash');
@@ -291,7 +295,7 @@
 
     var langs = {
         'fr': {
-            'mnu_1': 'Nouvelle Partie',
+            'mnu_1': 'Jouer',
             'mnu_2': 'Réinitialiser',
             'mnu_3': 'A propos du jeu',
             'end_1': 'Sérieusement ? Essaye de faire mieux...',
@@ -302,7 +306,7 @@
             'bes_t': 'Meilleur score : '
         },
         'en': {
-            'mnu_1': 'New Game',
+            'mnu_1': 'Start',
             'mnu_2': 'Reset',
             'mnu_3': 'About the game',
             'end_1': 'Seriously ? Do better of this please...',
@@ -318,11 +322,31 @@
     $("#button_1").click(function(){$("#bloc_menu").hide(300),window.location.hash="play"})
     $("#button_2").click(function(){localStorage.setItem("max",0),$("#max_val").html("0")})
     $('#button_3').click(function() {
-        alert('By Niji Ano (Version: 20220531.2)');
+        alert('By Niji Ano (Version: 20220531.3)');
     });
+    $("#display_menu").click(function(){$("#bloc_menu").show(300),window.location.hash="",$('#ping').css({top: -10, left: -10})})
 
     function detectMob(){return[/Android/i,/webOS/i,/iPhone/i,/iPad/i,/iPod/i,/BlackBerry/i,/Windows Phone/i].some(a=>navigator.userAgent.match(a))}
-    function rotateForEver(c,b){return void 0===b?b=$({deg:0}):b.get(0).deg=0,b.animate({deg:360},{duration:speed_rot,easing:"linear",step:function(a){c.css({transform:"rotate("+a+"deg)"})},complete:function(){stop_rotate?stop_rotate=!1:a(c,b)}})}
+    function rotateForEver($elem, rotator) {
+        void 0===rotator?rotator=$({deg:0}):rotator.get(0).deg=0
+        return rotator.animate(
+            {deg: 360},
+            {
+                duration: speed_rot,
+                easing: 'linear',
+                step: function(now){
+                    $elem.css({transform: 'rotate(' + now + 'deg)'});
+                },
+                complete: function(){
+                    if(!stop_rotate) {
+                        rotateForEver($elem, rotator);
+                    } else {
+                        stop_rotate = false;
+                    }
+                },
+            }
+        );
+    }
     function getRandomArbitrary(a,b){return parseInt(Math.random()*(b-a)+a)}
 
     function check_level(cnt) {
@@ -330,7 +354,7 @@
             width: (cnt % 10 * 10).toString() + '%'
         }, 300);
 
-        if (cnt % 10 == 0 && cnt < 100 && cnt > 0) {
+        if (cnt % 10 == 0 && cnt < 130 && cnt > 0) {
             $('.level_up').show('slide', {direction: 'down'}, 300).delay(3000).hide('slide', {direction: 'up'}, 300);
         }
         if (cnt >= 10 && cnt <= 20) {
@@ -352,22 +376,24 @@
             $('body').css({'background-color': 'black'});
         }
         else if (cnt == 60) {
-            $('#grid').css('animation', 'marg 2s infinite');
+            $('#grid').css('opacity', '0.5');
         }
         else if (cnt == 70) {
-            $('.line').css('animation', 'padd 2s infinite');
+            $('#grid').css('animation', 'marg 2s infinite');
         }
         else if (cnt == 80) {
             $('.bloc').css('animation', 'padd 2s infinite');
         }
         else if (cnt == 90) {
-            $('#grid').css('opacity', '0.5');
-            speed_rot = 2500;
+            $('.line').css('animation', 'padd 2s infinite');
         }
         else if (cnt == 100) {
-            $('#grid').css('opacity', '0.25');
+            speed_rot = 2500;
         }
         else if (cnt == 110) {
+            $('#grid').css('opacity', '0.25');
+        }
+        else if (cnt == 120) {
             speed_rot = 1500;
         }
     }
@@ -384,7 +410,13 @@
 
         $(document).mousemove(function(event) {
             skt_cur = [event.pageY, event.pageX];
-            $('#count').css({top: event.pageY + 20, left: event.pageX + 18})
+
+            if ($('#count').text() != '0'){
+                $('#count').css({top: event.pageY + 20, left: event.pageX + 18});
+            } else {
+                $('#count').css({top: -10, left: -10});
+            }
+
             if (!fixed) {
                 if (isMobile) {
                     $('#grid').css({top: ((($( window ).height() - 320) / 2) - 32).toString() + 'px', left: (($( window ).width() - 320) / 2).toString() + 'px'});
@@ -425,6 +457,7 @@
                             localStorage.setItem('max', play_cnt);
                         }
                         $('#grid, #count, .level_up').hide();
+                        $('#ping').css({top: -10, left: -10})
                         $('#welcome').fadeIn(500);
                         $('body').css({'background-color': 'black'})
                         $('.bar').animate({
@@ -433,14 +466,13 @@
 
                         if(play_cnt < 10) {
                             txt = langs[language]['end_1'];
-                        } else if(play_cnt > 120) {
+                        } else if(play_cnt > 150) {
                             txt = langs[language]['end_2'];
                         } else {
                             txt = langs[language]['end_3'];
                         }
 
                         html="<div>"+txt+"</div>",html+="<div><small>"+langs[language].end_r,html+="</small>",html+="<div id='end_count'>"+langs[language].end_s+play_cnt.toString()+"</div>",html+="</div>";
-
                         $("#msg").html(html).delay(3e3).queue(function(){location.reload()});
                     }
                 }
