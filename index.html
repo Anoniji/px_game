@@ -120,7 +120,19 @@
             right: 99px;
             bottom: 50%;
             text-align: center;
-            font-size: 50px;
+            font-size: 46px;
+        }
+
+        @media screen and (max-width: 1024px) {
+            #msg {
+                top: 194px;
+                bottom: auto;
+                font-size: 36px;
+            }
+            .level_up {
+                visibility: hidden;
+                opacity: 0;
+            }
         }
 
         #grid {
@@ -171,11 +183,13 @@
 
         #welcome {
             position: fixed;
-            top: 46px;
+            top: 32px;
             left: 12px;
             height: 64px;
             z-index: 1000;
             width: 150px;
+            display: none;
+            transition: none !important;
         }
 
         #welcome img {
@@ -193,9 +207,51 @@
             margin-top: 24px;
             font-size: 20px;
         }
+
+
+        #bloc_menu {
+            position: fixed;
+            top: 25vh;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        #bloc_menu div {
+            padding: 8px 0 24px;
+            font-size: 20px;
+            color: white;
+        }
+
+        #bloc_menu button {
+            border: 3px solid red;
+            border-radius: 3px;
+            background-color: white;
+            color: black;
+            padding: 8px 12px;
+            width: 190px;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
+
+    <div id='bloc_menu'>
+        <img src="./favicon.png" />
+        <div>PX_game</div>
+        <div>
+            <button id='button_1'></button>
+        </div>
+        <div>
+            <button id='button_2'></button>
+        </div>
+        <div>
+            <button id='button_3'></button>
+        </div>
+    </div>
+
     <div id='ping'></div>
     <div id='progress'>
         <div class='bar'></div>
@@ -210,8 +266,8 @@
     <div id='menu'>
         <div id='result'>
             <div id='max'>
-                Best score: 
-                <span>0</span>
+                <span id='max_txt'></span>
+                <span id='max_val'>0</span>
             </div>
             <div id='msg'></div>
         </div>
@@ -221,191 +277,177 @@
 </body>
 
 <script type="text/javascript">
-    fixed = false;
-    cnt = 0;
-    cnt_stk = 0;
-    play_cnt = 0;
-    fail_cnt = 0;
-    speed_rot = 10000;
-    stk = false;
-    stop_rotate = false
+    fixed=!1,cnt=0,cnt_stk=0,play_cnt=0,fail_cnt=0,speed_rot=1e4,stk=!1,stop_rotate=!1;
+    "fr"!=(language=navigator.language.split("-")[0])&&(language="en")
 
-    function rotateForEver($elem, rotator) {
-        if (rotator === void(0)) {
-            rotator = $({deg: 0});
-        } else {
-            rotator.get(0).deg = 0;
+    var hash = $(location).prop('hash');
+    if(hash) {
+        hash = hash.substr(1)
+    }
+
+    if(hash == 'play') {
+        $('#bloc_menu').hide(0);
+    }
+
+    var langs = {
+        'fr': {
+            'mnu_1': 'Nouvelle Partie',
+            'mnu_2': 'Réinitialiser',
+            'mnu_3': 'A propos du jeu',
+            'end_1': 'Sérieusement ? Essaye de faire mieux...',
+            'end_2': 'Je ne te crois pas, tu triches, sale tricheur :(',
+            'end_3': 'Game over, tu n\'es pas très doué :(',
+            'end_r': 'Le jeu va redémarrer...',
+            'end_s': 'Ton score : ',
+            'bes_t': 'Meilleur score : '
+        },
+        'en': {
+            'mnu_1': 'New Game',
+            'mnu_2': 'Reset',
+            'mnu_3': 'About the game',
+            'end_1': 'Seriously ? Do better of this please...',
+            'end_2': 'I don\'t believe you, you cheat, you dirty cheater :(',
+            'end_3': 'Game over, you\'re not very good :(',
+            'end_r': 'The game will restart...',
+            'end_s': 'Your score: ',
+            'bes_t': 'Best score: '
         }
+    };
 
-        return rotator.animate(
-            {deg: 360},
-            {
-                duration: speed_rot,
-                easing: 'linear',
-                step: function(now){
-                    $elem.css({transform: 'rotate(' + now + 'deg)'});
-                },
-                complete: function(){
-                    if(!stop_rotate) {
-                        rotateForEver($elem, rotator);
-                    } else {
-                        stop_rotate = false;
-                    }
-                },
-            }
-        );
-    }
+    $("#max_txt").html(langs[language].bes_t),$("#button_1").text(langs[language].mnu_1),$("#button_2").text(langs[language].mnu_2),$("#button_3").text(langs[language].mnu_3)
+    $("#button_1").click(function(){$("#bloc_menu").hide(300),window.location.hash="play"})
+    $("#button_2").click(function(){localStorage.setItem("max",0),$("#max_val").html("0")})
+    $('#button_3').click(function() {
+        alert('By Niji Ano (Version: 20220531.2)');
+    });
 
-    function getRandomArbitrary(min, max) {
-        return parseInt(Math.random() * (max - min) + min);
-    }
+    function detectMob(){return[/Android/i,/webOS/i,/iPhone/i,/iPad/i,/iPod/i,/BlackBerry/i,/Windows Phone/i].some(a=>navigator.userAgent.match(a))}
+    function rotateForEver(c,b){return void 0===b?b=$({deg:0}):b.get(0).deg=0,b.animate({deg:360},{duration:speed_rot,easing:"linear",step:function(a){c.css({transform:"rotate("+a+"deg)"})},complete:function(){stop_rotate?stop_rotate=!1:a(c,b)}})}
+    function getRandomArbitrary(a,b){return parseInt(Math.random()*(b-a)+a)}
 
     function check_level(cnt) {
         $('.bar').animate({
             width: (cnt % 10 * 10).toString() + '%'
         }, 300);
 
-        if (cnt % 10 == 0 && cnt < 90 && cnt > 0) {
+        if (cnt % 10 == 0 && cnt < 100 && cnt > 0) {
             $('.level_up').show('slide', {direction: 'down'}, 300).delay(3000).hide('slide', {direction: 'up'}, 300);
         }
-
         if (cnt >= 10 && cnt <= 20) {
             $('body').css({'background-color': 'white'})
         }
-        if (cnt >= 20 && cnt % 2 == 0) {
+        if (cnt < 40 && cnt >= 20 && cnt % 2 == 0) {
             $('body').css({'background-color': 'red'})
         }
-        if (cnt >= 20 && cnt % 2 == 1) {
+        if (cnt < 40 && cnt >= 20 && cnt % 2 == 1) {
             $('body').css({'background-color': 'white'})
         }
         if (cnt == 30) {
-            rotateForEver($('#grid'))
+            rotateForEver($('#grid'));
         }
-        if (cnt == 40) {
+        else if (cnt == 40) {
             speed_rot = 5000;
         }
-        if (cnt == 50) {
-            $('.bloc').css('border-radius', '50%');
+        else if (cnt == 50) {
+            $('body').css({'background-color': 'black'});
         }
-        if (cnt == 60) {
+        else if (cnt == 60) {
             $('#grid').css('animation', 'marg 2s infinite');
         }
-        if (cnt == 70) {
+        else if (cnt == 70) {
             $('.line').css('animation', 'padd 2s infinite');
         }
-        if (cnt == 80) {
+        else if (cnt == 80) {
             $('.bloc').css('animation', 'padd 2s infinite');
+        }
+        else if (cnt == 90) {
+            $('#grid').css('opacity', '0.5');
+            speed_rot = 2500;
+        }
+        else if (cnt == 100) {
+            $('#grid').css('opacity', '0.25');
+        }
+        else if (cnt == 110) {
+            speed_rot = 1500;
         }
     }
 
     // Generate grid
-    size = [10, 10]
-    for (let i=0; i<size[0]; i++) {
-        $('#grid').append('<div id="line_' + i + '" class="line">')
-        for (let j=0; j<size[1]; j++) {
-            $('#line_' + i + '').append('<div id="bloc_' + i + '_' + j + '" class="bloc"></div>')
-        }
-        $('#grid').append('</div>')
-    }
+    size=[10,10];for(let a=0;a<size[0];a++){$("#grid").append('<div id="line_'+a+'" class="line">');for(let b=0;b<size[1];b++)$("#line_"+a).append('<div id="bloc_'+a+"_"+b+'" class="bloc"></div>');$("#grid").append("</div>")}
 
     // Watcher
+    const isMobile = detectMob();
     jQuery(function($) {
         skt_cur = [0, 0];
         var max = localStorage.getItem('max');
-        if(max) {
-            $('#max span').html(max);
-        }
+        max&&$("#max_val").html(max);
 
-        $('#welcome').delay(1500).fadeOut(500);
         $(document).mousemove(function(event) {
             skt_cur = [event.pageY, event.pageX];
             $('#count').css({top: event.pageY + 20, left: event.pageX + 18})
             if (!fixed) {
-                $('#grid').css({top: event.pageY - 160, left: event.pageX - 160})
+                if (isMobile) {
+                    $('#grid').css({top: ((($( window ).height() - 320) / 2) - 32).toString() + 'px', left: (($( window ).width() - 320) / 2).toString() + 'px'});
+                } else {
+                    $('#grid').css({top: event.pageY - 160, left: event.pageX - 160});
+                }
             }
         }).mouseleave(function() {
             $('#count').css({top: '-10px', left: '-10px'})
         });
 
         $(document).on('click', function(evt) {
-            get_id = evt.target.id
-            get_x_y = get_id.split('_')
-            get_x_y = [parseInt(get_x_y[1]), parseInt(get_x_y[2])]
-            cnt = cnt + 1;
-
-            // Game count
-            if (get_id) {
-                $('#ping').css({top: skt_cur[0], left: skt_cur[1]})
-                var color = $('#' + get_id).css( "background-color" );
-                if(color != 'rgb(0, 0, 0)') {
-                    $('#' + get_id).css({'background-color': 'black'})
-                    play_cnt = play_cnt + 1;
-                    if (fail_cnt <= 0) {
-                        fail_cnt = 0;
-                    } else {
-                        fail_cnt = fail_cnt - 1;
-                    }
-                    check_level(play_cnt);
-                    $('#count').html(play_cnt);
-                } else {
-                    fail_cnt = fail_cnt + 1;
-                }
-
-                $('.fail').animate({
-                    width: (fail_cnt * 10).toString() + '%'
-                }, 300)
-
-                if (fail_cnt >= 10) {
-                    last = parseInt($('#max span').text());
-                    if (play_cnt > last) {
-                        $('#max span').html(play_cnt);
-                        localStorage.setItem('max', play_cnt);
-                    }
-                    $('#grid, #count, .level_up').hide();
-                    $('#welcome').fadeIn(500);
-                    $('body').css({'background-color': 'black'})
-                    $('.bar').animate({
-                        width: '0%'
-                    }, 300);
-
-                    if(play_cnt < 10) {
-                        txt = 'Seriously ? Do better of this please...';
-                    } else if(play_cnt > 100) {
-                        txt = 'I don\'t believe you, you cheat, you dirty cheater :(';
-                    } else {
-                        txt = 'Game over, you\'re not very good :(';
-                    }
-
-                    html = '<div>' + txt + '</div>';
-                    html += '<div><small>The game will restart...';
-                    html += '</small>';
-                    html += '<div id=\'end_count\'>Your score: ' + play_cnt.toString() + '</div>';
-                    html += '</div>'
-
-                    $('#msg').html(html).delay(3000).queue(function () {
-                        location.reload();
-                    });
-                }
-            }
-
-            // Game move
-            fixed = true;
-            $('#bloc_' + getRandomArbitrary(0, size[0] - 1) + '_' + getRandomArbitrary(0, size[1] - 1)).css(
-                {'background-color': 'red'}).delay(800).queue(function (next) {
-                    $(this).css({'background-color': 'black'}).delay(300).queue(function (act) {
-                        cnt = cnt - 1;
-                        if (cnt <= 0) {
-                            fixed = false;
-                            cnt = 0;
-                        }
-                        if (cnt_stk != cnt || cnt < (size[0] * size[1] - 10)) {
-                            cnt_stk = cnt;
+            get_x_y=[parseInt((get_x_y=(get_id=evt.target.id).split("_"))[1]),parseInt(get_x_y[2])],cnt+=1
+            if(!$('#bloc_menu').is(':visible')) {
+                // Game count
+                if (get_id) {
+                    $('#ping').css({top: skt_cur[0], left: skt_cur[1]})
+                    var color = $('#' + get_id).css( "background-color" );
+                    if(color != 'rgb(0, 0, 0)') {
+                        $('#' + get_id).css({'background-color': 'black'})
+                        play_cnt = play_cnt + 1;
+                        if (fail_cnt <= 0) {
+                            fail_cnt = 0;
                         } else {
-                            $('.bloc').css({'background-color': 'black'});
+                            fail_cnt = fail_cnt - 1;
                         }
-                    });
-                    next();
-                });
+                        check_level(play_cnt);
+                        $('#count').html(play_cnt);
+                    } else {
+                        fail_cnt = fail_cnt + 1;
+                    }
+
+                    $(".fail").animate({width:(10*fail_cnt).toString()+"%"},300)
+                    if (fail_cnt >= 10) {
+                        last = parseInt($('#max_val').text());
+                        if (play_cnt > last) {
+                            $('#max_val').html(play_cnt);
+                            localStorage.setItem('max', play_cnt);
+                        }
+                        $('#grid, #count, .level_up').hide();
+                        $('#welcome').fadeIn(500);
+                        $('body').css({'background-color': 'black'})
+                        $('.bar').animate({
+                            width: '0%'
+                        }, 300);
+
+                        if(play_cnt < 10) {
+                            txt = langs[language]['end_1'];
+                        } else if(play_cnt > 120) {
+                            txt = langs[language]['end_2'];
+                        } else {
+                            txt = langs[language]['end_3'];
+                        }
+
+                        html="<div>"+txt+"</div>",html+="<div><small>"+langs[language].end_r,html+="</small>",html+="<div id='end_count'>"+langs[language].end_s+play_cnt.toString()+"</div>",html+="</div>";
+
+                        $("#msg").html(html).delay(3e3).queue(function(){location.reload()});
+                    }
+                }
+
+                // Game move
+                fixed=!0,$("#bloc_"+getRandomArbitrary(0,size[0]-1)+"_"+getRandomArbitrary(0,size[1]-1)).css({"background-color":"red"}).delay(800).queue(function(a){$(this).css({"background-color":"black"}).delay(300).queue(function(a){(cnt-=1)<=0&&(fixed=!1,cnt=0),cnt_stk!=cnt||cnt<size[0]*size[1]-10?cnt_stk=cnt:$(".bloc").css({"background-color":"black"})}),a()});
+            }
         });
     });
 </script>
